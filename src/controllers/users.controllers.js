@@ -1,9 +1,8 @@
-import { db } from "../database/database.connection.js";
+import { getAllUserProfileDB, getUserProfileByIdDB } from "../repositories/users.repository.js";
 
 export async function getUserProfile(req,res){
-    const {id} = req.params;
     try {
-        const userData = await db.query('SELECT id, username,"imgProfile",bio,"createdAt" FROM users WHERE id=$1',[id]);
+        const userData = await getUserProfileByIdDB(req.params);
         //JUNTAR AOS POSTS!
         res.send(userData.rows[0]);
     } catch (err) {
@@ -13,7 +12,7 @@ export async function getUserProfile(req,res){
 
 export async function getAllUsers(req,res){
     try {
-        const userData = await db.query('SELECT username,"imgProfile",bio FROM users');
+        const userData = await getAllUserProfileDB()
         res.send(userData.rows);
     } catch (err) {
         res.status(500).send(err.message);

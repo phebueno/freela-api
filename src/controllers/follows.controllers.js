@@ -1,24 +1,14 @@
 import { db } from "../database/database.connection.js";
+import { deleteFollowDB, getFollowersByIdDB, getFollowsByIdDB, insertFollowDB } from "../repositories/follows.repository.js";
 
 export async function followUser(req, res) {
   //AUTH vai dar userId (followerId) por locals
-  const followerId = 1;
+  const followerId = 7;
   const accountId = req.params.userId;
   if (Number(followerId) === Number(accountId))
     return res.status(409).send("Você não pode seguir a si mesmo!");
   try {
-    const follow = await db.query(
-      `
-            INSERT INTO follows ("followerId", "accountId", "createdAt")
-                SELECT u1.id, u2.id, NOW()
-                FROM users u1, users u2
-                    WHERE u1.id <> u2.id
-                        AND u1.id=$1
-                        AND u2.id=$2;
-            ;
-              `,
-      [followerId, accountId]
-    );
+    const follow = await insertFollowDB(followerId,accountId);
     if (!follow.rowCount)
       return res.status(404).send("Usuário não encontrado!");
     res.status(201).send("Seguindo o usuário!");
@@ -31,20 +21,12 @@ export async function followUser(req, res) {
 
 export async function unfollowUser(req, res) {
   //AUTH vai dar userId (followerId) por locals
-  const followerId = 3;
+  const followerId = 7;
   const accountId = req.params.userId;
   if (Number(followerId) === Number(accountId))
     return res.status(409).send("Você não pode deixar de seguir a si mesmo!");
   try {
-    const unfollow = await db.query(
-      `
-            DELETE FROM follows WHERE "accountId" IN 
-                (SELECT id FROM users WHERE id=$2)
-                    AND "followerId" = $1
-            ;
-              `,
-      [followerId, accountId]
-    );
+    const unfollow = await deleteFollowDB(followerId,accountId)
     if (!unfollow.rowCount)
       return res.status(404).send("Usuário não encontrado!");
     res.status(204).send("Deixando de seguir o usuário!");
@@ -56,14 +38,7 @@ export async function unfollowUser(req, res) {
 export async function getFollowers(req, res) {
   const accountId = req.params.userId;
   try {
-    const followers = await db.query(
-      `
-        SELECT "followerId" AS id, users.username, users."imgProfile", users.bio 
-            FROM follows
-                JOIN users ON follows."followerId"=users.id
-            WHERE "accountId"=$1`,
-      [accountId]
-    );
+    const followers = await getFollowersByIdDB(req.params)
     if (!followers.rowCount) {
       //verifica se usuário é valido (pode virar middleware)
       const user = await db.query(`SELECT * FROM users WHERE id=$1`, [accountId]);
@@ -78,14 +53,7 @@ export async function getFollowers(req, res) {
 export async function getFollows(req, res) {
     const accountId = req.params.userId;
     try {
-      const followers = await db.query(
-        `
-        SELECT "accountId" AS id, users.username, users."imgProfile", users.bio 
-            FROM follows
-                JOIN users ON follows."accountId"=users.id
-                WHERE "followerId"=$1`,
-        [accountId]
-      );
+      const followers = await getFollowsByIdDB(req.params);
       if (!followers.rowCount) {
         //verifica se usuário é valido (pode virar middleware)
         const user = await db.query(`SELECT * FROM users WHERE id=$1`, [accountId]);

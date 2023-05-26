@@ -21,7 +21,7 @@ FROM users u
 WHERE u.id = $1;	`,[id])
 }
 
-export function getAllUsersDB(params){
+export function getAllUsersDB(){
     return db.query(`
         SELECT id, username,"imgProfile",bio FROM users
         `);

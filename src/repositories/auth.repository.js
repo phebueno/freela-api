@@ -22,5 +22,21 @@ export function getUserByEmailDB(body) {
           [login.rows[0].id, token]
         );
   }
+
+  export function getUserFromSessionTokenDB(token){
+    return db.query(
+      `SELECT * FROM users 
+          WHERE id=
+          (SELECT "userId" FROM sessions 
+          WHERE token=$1
+  )`,[token])
+  }
+
+  export function getUserByIdDB(userId){
+    return db.query(
+      `SELECT * FROM users 
+          WHERE id=$1
+  `,[userId])
+  }
   
   

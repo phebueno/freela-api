@@ -3,7 +3,6 @@ import { getAllUsersDB, getUserProfileByIdDB } from "../repositories/users.repos
 export async function getUserProfile(req,res){
     try {
         const userData = await getUserProfileByIdDB(req.params);
-        //JUNTAR AOS POSTS!
         res.send(userData.rows[0].json_build_object);
     } catch (err) {
         res.status(500).send(err.message);

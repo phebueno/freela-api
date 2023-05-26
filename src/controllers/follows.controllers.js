@@ -1,9 +1,9 @@
 import { db } from "../database/database.connection.js";
+import { getUserByIdDB } from "../repositories/auth.repository.js";
 import { deleteFollowDB, getFollowersByIdDB, getFollowsByIdDB, insertFollowDB } from "../repositories/follows.repository.js";
 
 export async function followUser(req, res) {
-  //AUTH vai dar userId (followerId) por locals
-  const followerId = 7;
+  const followerId = res.locals.user.id;
   const accountId = req.params.userId;
   if (Number(followerId) === Number(accountId))
     return res.status(409).send("Você não pode seguir a si mesmo!");
@@ -19,16 +19,19 @@ export async function followUser(req, res) {
   }
 }
 
-export async function unfollowUser(req, res) {
-  //AUTH vai dar userId (followerId) por locals
-  const followerId = 7;
+export async function unfollowUser(req, res) {  
+  const followerId = res.locals.user.id;
   const accountId = req.params.userId;
   if (Number(followerId) === Number(accountId))
     return res.status(409).send("Você não pode deixar de seguir a si mesmo!");
   try {
     const unfollow = await deleteFollowDB(followerId,accountId)
-    if (!unfollow.rowCount)
-      return res.status(404).send("Usuário não encontrado!");
+    if (!unfollow.rowCount){
+      const user = await getUserByIdDB(accountId);
+      if(!user.rowCount) return res.status(404).send("Usuário não encontrado!"); 
+      return res.status(409).send("Vocẽ não segue esse usuário!");
+    }
+      
     res.status(204).send("Deixando de seguir o usuário!");
   } catch (err) {
     res.status(500).send(err.message);
@@ -41,7 +44,7 @@ export async function getFollowers(req, res) {
     const followers = await getFollowersByIdDB(req.params)
     if (!followers.rowCount) {
       //verifica se usuário é valido (pode virar middleware)
-      const user = await db.query(`SELECT * FROM users WHERE id=$1`, [accountId]);
+      const user = await getUserByIdDB(accountId);
       if (!user.rowCount) return res.status(404).send("Usuário não encontrado!");
     }
     res.status(200).send(followers.rows);
@@ -56,7 +59,7 @@ export async function getFollows(req, res) {
       const followers = await getFollowsByIdDB(req.params);
       if (!followers.rowCount) {
         //verifica se usuário é valido (pode virar middleware)
-        const user = await db.query(`SELECT * FROM users WHERE id=$1`, [accountId]);
+        const user = await getUserByIdDB(accountId);
         if (!user.rowCount) return res.status(404).send("Usuário não encontrado!");
       }
       res.status(200).send(followers.rows);

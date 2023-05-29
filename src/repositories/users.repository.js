@@ -5,6 +5,7 @@ export function getUserProfileByIdDB(params){
 //VOCÊ ESTÁ AQUI
 
 return db.query(`SELECT json_build_object(
+  'id', u.id,
   'username', u.username,
   'imgProfile', u."imgProfile",
 	'bio', u.bio,
